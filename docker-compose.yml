@@ -1,0 +1,83 @@
+version: "3.8"
+
+services:
+  # PostgreSQL - Optional if using Supabase
+  # Comment out this service if you're using Supabase
+  postgres:
+    image: postgres:16-alpine
+    container_name: cms-postgres
+    environment:
+      POSTGRES_USER: cms_user
+      POSTGRES_PASSWORD: cms_password
+      POSTGRES_DB: cms_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cms_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - local # Only start with: docker-compose --profile local up
+
+  # Redis - Optional for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: cms-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # API - Uncomment if you want to run in Docker
+  # Otherwise run with: npm run dev
+  # api:
+  #   build:
+  #     context: ./apps/api
+  #     dockerfile: Dockerfile
+  #   container_name: cms-api
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     # Use your Supabase credentials here
+  #     DATABASE_URL: ${DATABASE_URL}
+  #     DIRECT_URL: ${DIRECT_URL}
+  #     REDIS_URL: redis://redis:6379
+  #     JWT_SECRET: ${JWT_SECRET}
+  #     JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+  #     NODE_ENV: development
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./apps/api:/app
+  #     - /app/node_modules
+
+  # Web - Uncomment if you want to run in Docker
+  # Otherwise run with: npm run dev
+  # web:
+  #   build:
+  #     context: ./apps/web
+  #     dockerfile: Dockerfile
+  #   container_name: cms-web
+  #   ports:
+  #     - "4321:4321"
+  #   environment:
+  #     PUBLIC_API_URL: http://localhost:3000
+  #     NODE_ENV: development
+  #   depends_on:
+  #     - api
+  #   volumes:
+  #     - ./apps/web:/app
+  #     - /app/node_modules
+
+volumes:
+  postgres_data:
+  redis_data:

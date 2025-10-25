@@ -1,0 +1,29 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:e2e
+
+  deploy-api:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: docker build -t api ./apps/api
+      - run: docker push $REGISTRY/api:$GITHUB_SHA
+
+  deploy-web:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: docker build -t web ./apps/web
+      - run: docker push $REGISTRY/web:$GITHUB_SHA
