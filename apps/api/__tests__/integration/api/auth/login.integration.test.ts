@@ -4,18 +4,21 @@ import bcrypt from "bcryptjs";
 
 describe("Login API Integration Tests", () => {
   let testUserId: string;
-  const testEmail = "integration-test@example.com";
-  const testPassword = "TestPassword123!";
+  const testEmail = "test@admin.com";
+  const testPassword = "test1234567890";
 
   beforeAll(async () => {
+    // Clean up any existing test user first
+    await prisma.user.deleteMany({ where: { email: testEmail } });
+
     // Create test user in database
     const hashedPassword = await bcrypt.hash(testPassword, 10);
     const user = await prisma.user.create({
       data: {
         email: testEmail,
-        name: "Integration Test User",
+        name: "Test",
         password: hashedPassword,
-        role: "editor",
+        role: "admin",
       },
     });
     testUserId = user.id;
@@ -23,7 +26,9 @@ describe("Login API Integration Tests", () => {
 
   afterAll(async () => {
     // Cleanup
-    await prisma.user.delete({ where: { id: testUserId } });
+    if (testUserId) {
+      await prisma.user.delete({ where: { id: testUserId } });
+    }
     await prisma.$disconnect();
   });
 
