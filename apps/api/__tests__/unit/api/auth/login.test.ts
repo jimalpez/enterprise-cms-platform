@@ -37,9 +37,9 @@ vi.mock("@/lib/redis", () => ({
 describe("POST /api/auth/login", () => {
   const mockUser = {
     id: "cmgyzbf960000m5u4cc3waw3v",
-    email: "test@admin.com",
-    name: "Test",
-    password: "$2b$10$77.FrGS0NrqW.oqe72lNJOuyqTgETCK16JW27NdQeQyKBf.n7Z/Mu",
+    email: "jimalpez@gmail.com",
+    name: "Jim Alpez",
+    password: "$2b$10$tN6S9e3PXPuIYyHkqxwLjeyslmLNgUoswW7OQknYF7xpZXetchYW2",
     role: "admin",
     avatar: null,
     stripeCustomerId: "cus_TestCustomer12",
@@ -63,7 +63,7 @@ describe("POST /api/auth/login", () => {
     (checkRateLimit as Mock).mockResolvedValue({ allowed: true, remaining: 9 });
     (validateRequest as Mock).mockResolvedValue({
       success: true,
-      data: { email: "test@admin.com", password: "test1234567890" },
+      data: { email: "jimalpez@gmail.com", password: "Jim1234567890!" },
     });
   });
 
@@ -89,8 +89,8 @@ describe("POST /api/auth/login", () => {
       (getUserPermissions as Mock).mockReturnValue(mockPermissions);
 
       const request = createMockRequest({
-        email: "test@admin.com",
-        password: "test1234567890",
+        email: "jimalpez@gmail.com",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -127,8 +127,8 @@ describe("POST /api/auth/login", () => {
       (getUserPermissions as Mock).mockReturnValue(mockPermissions);
 
       const request = createMockRequest({
-        email: "test@admin.com",
-        password: "test1234567890",
+        email: "jimalpez@gmail.com",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -138,10 +138,10 @@ describe("POST /api/auth/login", () => {
       expect(checkRateLimit).toHaveBeenCalledWith("login:unknown", 10, 3600);
       expect(validateRequest).toHaveBeenCalled();
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
-        where: { email: "test@admin.com" },
+        where: { email: "jimalpez@gmail.com" },
       });
       expect(verifyPassword).toHaveBeenCalledWith(
-        "test1234567890",
+        "Jim1234567890!",
         mockUser.password,
       );
       expect(generateAuthTokens).toHaveBeenCalledWith(mockUser);
@@ -158,7 +158,7 @@ describe("POST /api/auth/login", () => {
       });
 
       const request = createMockRequest(
-        { email: "test@admin.com", password: "test1234567890" },
+        { email: "jimalpez@gmail.com", password: "Jim1234567890!" },
         { "x-forwarded-for": "192.168.1.1" },
       );
 
@@ -186,7 +186,7 @@ describe("POST /api/auth/login", () => {
       (getUserPermissions as Mock).mockReturnValue(mockPermissions);
 
       const request = createMockRequest(
-        { email: "test@admin.com", password: "test1234567890" },
+        { email: "jimalpez@gmail.com", password: "Jim1234567890!" },
         { "x-forwarded-for": "192.168.1.100" },
       );
 
@@ -209,8 +209,8 @@ describe("POST /api/auth/login", () => {
       (getUserPermissions as Mock).mockReturnValue(mockPermissions);
 
       const request = createMockRequest({
-        email: "test@admin.com",
-        password: "test1234567890",
+        email: "jimalpez@gmail.com",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -263,7 +263,7 @@ describe("POST /api/auth/login", () => {
 
       const request = createMockRequest({
         email: "not-an-email",
-        password: "test1234567890",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -283,7 +283,7 @@ describe("POST /api/auth/login", () => {
       });
 
       const request = createMockRequest({
-        email: "test@admin.com",
+        email: "jimalpez@gmail.com",
       });
 
       // Act
@@ -303,7 +303,7 @@ describe("POST /api/auth/login", () => {
 
       const request = createMockRequest({
         email: "nonexistent@example.com",
-        password: "test1234567890",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -323,14 +323,14 @@ describe("POST /api/auth/login", () => {
       // Arrange
       (validateRequest as Mock).mockResolvedValue({
         success: true,
-        data: { email: "test@admin.com", password: "wrongpassword" },
+        data: { email: "jimalpez@gmail.com", password: "wrongpassword" },
       });
 
       (prisma.user.findUnique as Mock).mockResolvedValue(mockUser);
       (verifyPassword as Mock).mockResolvedValue(false);
 
       const request = createMockRequest({
-        email: "test@admin.com",
+        email: "jimalpez@gmail.com",
         password: "wrongpassword",
       });
 
@@ -380,7 +380,7 @@ describe("POST /api/auth/login", () => {
 
       const request = createMockRequest({
         email: "TEST@EXAMPLE.COM", // Different case
-        password: "test1234567890",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -401,8 +401,8 @@ describe("POST /api/auth/login", () => {
       );
 
       const request = createMockRequest({
-        email: "test@admin.com",
-        password: "test1234567890",
+        email: "jimalpez@gmail.com",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -424,8 +424,8 @@ describe("POST /api/auth/login", () => {
       );
 
       const request = createMockRequest({
-        email: "test@admin.com",
-        password: "test1234567890",
+        email: "jimalpez@gmail.com",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -463,8 +463,8 @@ describe("POST /api/auth/login", () => {
       );
 
       const request = createMockRequest({
-        email: "test@admin.com",
-        password: "test1234567890",
+        email: "jimalpez@gmail.com",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -489,8 +489,8 @@ describe("POST /api/auth/login", () => {
       (getUserPermissions as Mock).mockReturnValue(mockPermissions);
 
       const request = createMockRequest({
-        email: "test@admin.com",
-        password: "test1234567890",
+        email: "jimalpez@gmail.com",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -528,8 +528,8 @@ describe("POST /api/auth/login", () => {
       (getUserPermissions as Mock).mockReturnValue(mockPermissions);
 
       const request = createMockRequest({
-        email: "test@admin.com",
-        password: "test1234567890",
+        email: "jimalpez@gmail.com",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -554,8 +554,8 @@ describe("POST /api/auth/login", () => {
       ]);
 
       const request = createMockRequest({
-        email: "test@admin.com",
-        password: "test1234567890",
+        email: "jimalpez@gmail.com",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -583,8 +583,8 @@ describe("POST /api/auth/login", () => {
       (getUserPermissions as Mock).mockReturnValue(mockPermissions);
 
       const request = createMockRequest({
-        email: "test@admin.com",
-        password: "test1234567890",
+        email: "jimalpez@gmail.com",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -605,8 +605,8 @@ describe("POST /api/auth/login", () => {
       (getUserPermissions as Mock).mockReturnValue(mockPermissions);
 
       const request = createMockRequest({
-        email: "test@admin.com",
-        password: "test1234567890",
+        email: "jimalpez@gmail.com",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -626,8 +626,8 @@ describe("POST /api/auth/login", () => {
       (getUserPermissions as Mock).mockReturnValue([]);
 
       const request = createMockRequest({
-        email: "test@admin.com",
-        password: "test1234567890",
+        email: "jimalpez@gmail.com",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -644,13 +644,13 @@ describe("POST /api/auth/login", () => {
       const longEmail = "a".repeat(250) + "@example.com";
       (validateRequest as Mock).mockResolvedValue({
         success: true,
-        data: { email: longEmail, password: "test1234567890" },
+        data: { email: longEmail, password: "Jim1234567890!" },
       });
       (prisma.user.findUnique as Mock).mockResolvedValue(null);
 
       const request = createMockRequest({
         email: longEmail,
-        password: "test1234567890",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -670,7 +670,7 @@ describe("POST /api/auth/login", () => {
 
       const request = createMockRequest({
         email: "nonexistent@example.com",
-        password: "test1234567890",
+        password: "Jim1234567890!",
       });
 
       // Act
@@ -689,7 +689,7 @@ describe("POST /api/auth/login", () => {
       (verifyPassword as Mock).mockResolvedValue(false);
 
       const request = createMockRequest({
-        email: "test@admin.com",
+        email: "jimalpez@gmail.com",
         password: "wrongpassword",
       });
 
@@ -709,7 +709,7 @@ describe("POST /api/auth/login", () => {
       (verifyPassword as Mock).mockResolvedValue(false);
 
       const request = createMockRequest({
-        email: "test@admin.com",
+        email: "jimalpez@gmail.com",
         password: "wrongpassword",
       });
 

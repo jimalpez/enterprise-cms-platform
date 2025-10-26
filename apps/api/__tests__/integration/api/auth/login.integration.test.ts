@@ -4,33 +4,8 @@ import bcrypt from "bcryptjs";
 
 describe("Login API Integration Tests", () => {
   let testUserId: string;
-  const testEmail = "test@admin.com";
-  const testPassword = "test1234567890";
-
-  beforeAll(async () => {
-    // Clean up any existing test user first
-    await prisma.user.deleteMany({ where: { email: testEmail } });
-
-    // Create test user in database
-    const hashedPassword = await bcrypt.hash(testPassword, 10);
-    const user = await prisma.user.create({
-      data: {
-        email: testEmail,
-        name: "Test",
-        password: hashedPassword,
-        role: "admin",
-      },
-    });
-    testUserId = user.id;
-  });
-
-  afterAll(async () => {
-    // Cleanup
-    if (testUserId) {
-      await prisma.user.delete({ where: { id: testUserId } });
-    }
-    await prisma.$disconnect();
-  });
+  const testEmail = "jimalpez@gmail.com";
+  const testPassword = "Jim1234567890!";
 
   it("should login with real database", async () => {
     const response = await fetch("http://localhost:3000/api/auth/login", {
