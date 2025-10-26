@@ -40,14 +40,7 @@ interface UploadResponse {
   error?: string;
 }
 
-/**
- * POST /api/media/upload
- * Uploads a file and creates a media record
- *
- * @header Authorization - Bearer token (required)
- * @body file - The file to upload (multipart/form-data)
- * @returns Media object with URL and metadata
- */
+// POST /api/media/upload
 export async function POST(
   request: NextRequest,
 ): Promise<NextResponse<UploadResponse>> {
@@ -181,10 +174,7 @@ export async function POST(
   }
 }
 
-/**
- * GET /api/media/upload
- * Returns upload configuration and limits
- */
+// GET /api/media/upload
 export async function GET(): Promise<NextResponse> {
   return NextResponse.json({
     maxFileSize: MAX_FILE_SIZE,

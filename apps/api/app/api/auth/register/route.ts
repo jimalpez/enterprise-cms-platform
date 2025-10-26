@@ -8,7 +8,7 @@ import {
 } from "@/lib/auth";
 import { validateRequest, registerSchema } from "@/lib/validation";
 import { checkRateLimit } from "@/lib/redis";
-import { UserRole } from "@prisma/client"; // ADD THIS IMPORT
+import { UserRole } from "@prisma/client";
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         email,
         password: hashedPassword,
         name,
-        role: UserRole.author, // CHANGED: Use enum instead of string
+        role: UserRole.author,
         emailVerified: null,
       },
     });

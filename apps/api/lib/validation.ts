@@ -1,7 +1,6 @@
 // @lib/validation.ts
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
-import { format } from "path";
 
 interface defaultProps {
   width?: number;
@@ -35,9 +34,8 @@ export const refreshTokenSchema = z.object({
 
 export const metadataSchema = z
   .record(
-    z.string(), // Key must be a string
+    z.string(),
     z.union([
-      // Value can be string, number, boolean, or null
       z.string(),
       z.number(),
       z.boolean(),

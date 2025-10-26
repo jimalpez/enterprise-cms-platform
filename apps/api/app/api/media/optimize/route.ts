@@ -52,17 +52,7 @@ const IMAGE_VARIANTS = [
   { name: "xlarge", width: 1920, height: 1920, fit: "inside" as const },
 ];
 
-/**
- * POST /api/media/optimize
- * Optimizes an image with specified parameters
- *
- * @header Authorization - Bearer token (required)
- * @body mediaId - ID of existing media to optimize
- * @body url - Direct URL to image (if not using mediaId)
- * @body options - Optimization options (width, height, quality, format, fit)
- * @body createVariants - Whether to create multiple size variants
- * @returns Optimized image details and variants
- */
+// POST /api/media/optimize
 export async function POST(
   request: NextRequest,
 ): Promise<NextResponse<OptimizeResponse>> {
@@ -292,10 +282,7 @@ export async function POST(
   }
 }
 
-/**
- * GET /api/media/optimize
- * Returns optimization configuration
- */
+// GET /api/media/optimize
 export async function GET(): Promise<NextResponse> {
   return NextResponse.json({
     supportedFormats: ["jpeg", "png", "webp", "avif"],

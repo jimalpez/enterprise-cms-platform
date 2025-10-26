@@ -32,7 +32,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.permissions = getUserPermissions(user.role as UserRole); // Type cast here
+        token.permissions = getUserPermissions(user.role as UserRole);
       }
       return token;
     },
@@ -59,7 +59,7 @@ export const authOptions: NextAuthOptions = {
               email: user.email!,
               name: user.name || "User",
               avatar: user.image,
-              role: UserRole.author, // Use enum value
+              role: UserRole.author,
               emailVerified: new Date(),
             },
           });

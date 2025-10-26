@@ -31,20 +31,6 @@ interface MediaListResponse {
   errors?: Array<{ field: string; message: string }>;
 }
 
-/**
- * GET /api/media
- * Lists all media with filtering and pagination
- *
- * @header Authorization - Bearer token (required)
- * @query page - Page number (default: 1)
- * @query limit - Items per page (default: 20, max: 100)
- * @query search - Search by filename
- * @query mimetype - Filter by MIME type (e.g., 'image/jpeg')
- * @query uploadedBy - Filter by user ID
- * @query sortBy - Sort field: createdAt, size, filename (default: createdAt)
- * @query sortOrder - Sort order: asc, desc (default: desc)
- * @returns Paginated list of media
- */
 export async function GET(
   request: NextRequest,
 ): Promise<NextResponse<MediaListResponse>> {

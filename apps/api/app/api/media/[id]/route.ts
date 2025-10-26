@@ -26,14 +26,7 @@ interface MediaResponse {
   error?: string;
 }
 
-/**
- * GET /api/media/[id]
- * Get details of a specific media item
- *
- * @header Authorization - Bearer token (required)
- * @param id - Media ID
- * @returns Media details
- */
+// GET /api/media/[id]
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } },
@@ -107,15 +100,7 @@ export async function GET(
   }
 }
 
-/**
- * DELETE /api/media/[id]
- * Delete a media item
- *
- * @header Authorization - Bearer token (required)
- * @param id - Media ID
- * @query deleteFile - Whether to delete the physical file (default: true)
- * @returns Success confirmation
- */
+// DELETE /api/media/[id]
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } },
@@ -203,15 +188,7 @@ export async function DELETE(
   }
 }
 
-/**
- * PATCH /api/media/[id]
- * Update media metadata (filename only)
- *
- * @header Authorization - Bearer token (required)
- * @param id - Media ID
- * @body filename - New filename
- * @returns Updated media details
- */
+// PATCH /api/media/[id]
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } },

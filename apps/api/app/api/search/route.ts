@@ -3,32 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateRequest, searchSchema } from "@/lib/validation";
 
-/**
- * GET /api/search
- * Search content with flexible filters
- *
- * Query Parameters:
- * - q: Search query (searches title, content, excerpt)
- * - type: Content type (article, page, media)
- * - author: Author name, email, or ID
- * - status: Content status (draft, published, archived)
- * - tags: Comma-separated tags
- * - date: Year (2024) or date range
- * - dateFrom: Start date (ISO format)
- * - dateTo: End date (ISO format)
- * - page: Page number (default: 1)
- * - limit: Items per page (default: 10, max: 100)
- * - sortBy: Sort field (createdAt, updatedAt, publishedAt, title)
- * - sortOrder: Sort order (asc, desc)
- *
- * Examples:
- * - /api/search?q=react
- * - /api/search?q=react&type=article
- * - /api/search?q=tutorial&author=john
- * - /api/search?date=2024
- * - /api/search?tags=javascript,nextjs
- * - /api/search?status=published&sortBy=publishedAt&sortOrder=desc
- */
+// GET /api/search
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
