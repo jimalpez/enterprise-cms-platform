@@ -1,0 +1,58 @@
+---
+// apps/web/src/pages/dashboard/content/new/index.astro
+export const prerender = false;
+
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+import ContentEditor from "@/components/react/ContentEditor";
+
+// Check if user is authenticated
+const token = Astro.cookies.get("accessToken")?.value || "";
+
+// If no token, redirect to login
+if (!token) {
+  return Astro.redirect("/login");
+}
+
+// Optional: Verify token and get user info
+let user = null;
+try {
+  // You can decode the JWT or make an API call to verify
+  // For now, we'll assume the token is valid
+  const userStr = Astro.cookies.get("user")?.value;
+  if (userStr) {
+    user = JSON.parse(userStr);
+  }
+} catch (e) {
+  return Astro.redirect("/login");
+}
+
+// Check if user has permission to create content
+if (user && user.role === "viewer") {
+  return Astro.redirect("/dashboard");
+}
+
+const title = "Create New Content";
+---
+
+<DashboardLayout title={title}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Create New Content</h1>
+        <p class="mt-2 text-gray-600">
+          Write and publish your content with our powerful editor
+        </p>
+      </div>
+
+      <a
+        href="/dashboard/content"
+        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition">
+        ← Back to Content
+      </a>
+    </div>
+
+    <!-- Content Editor (React component with full interactivity) -->
+    <ContentEditor client:only="react" mode="create" />
+  </div>
+</DashboardLayout>

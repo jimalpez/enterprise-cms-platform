@@ -1,0 +1,134 @@
+---
+// apps/web/src/pages/dashboard/content/[id]/edit/index.astro
+export const prerender = false;
+
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+import ContentEditor from "@/components/react/ContentEditor";
+import { contentApi } from "@/lib/api";
+
+// Get content ID from URL params
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect("/dashboard/content");
+}
+
+// Check if user is authenticated
+const token = Astro.cookies.get("accessToken")?.value || "";
+
+if (!token) {
+  return Astro.redirect("/login");
+}
+
+// Get user info
+let user = null;
+try {
+  const userStr = Astro.cookies.get("user")?.value;
+  if (userStr) {
+    user = JSON.parse(userStr);
+  }
+} catch (e) {
+  return Astro.redirect("/login");
+}
+
+// Optional: Verify user has permission to edit this content
+// You can fetch the content here to check if user is the author
+let content = null;
+let hasPermission = false;
+
+try {
+  // Set the authorization header for the API client
+  // Note: In a real app, you'd want to do this more elegantly
+  content = await contentApi.getById(id);
+
+  // Check permissions
+  if (user) {
+    hasPermission =
+      user.id === content.authorId ||
+      user.role === "admin" ||
+      user.role === "editor";
+  }
+} catch (error) {
+  console.error("Failed to load content:", error);
+  return Astro.redirect("/dashboard/content");
+}
+
+if (!hasPermission) {
+  return Astro.redirect("/dashboard/content");
+}
+
+const title = `Edit: ${content.title}`;
+---
+
+<DashboardLayout title={title}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Edit Content</h1>
+        <p class="mt-2 text-gray-600">Make changes to your content</p>
+      </div>
+
+      <div class="flex gap-2">
+        <a
+          href="/dashboard/content"
+          class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition">
+          ← Back to Content
+        </a>
+
+        {
+          content.status === "published" && (
+            <a
+              href={`/blog/${content.slug}`}
+              target="_blank"
+              class="px-4 py-2 text-blue-700 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition">
+              View Published →
+            </a>
+          )
+        }
+      </div>
+    </div>
+
+    <!-- Content Info -->
+    <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <span class="text-sm text-blue-900">
+            <strong>Status:</strong>
+            <span
+              class={`ml-2 px-2 py-1 rounded text-xs ${
+                content.status === "published"
+                  ? "bg-green-100 text-green-800"
+                  : content.status === "draft"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-gray-100 text-gray-800"
+              }`}>
+              {content.status.charAt(0).toUpperCase() + content.status.slice(1)}
+            </span>
+          </span>
+
+          <span class="text-sm text-blue-900">
+            <strong>Type:</strong>
+            {content.type}
+          </span>
+
+          <span class="text-sm text-blue-900">
+            <strong>Version:</strong>
+            {content.version}
+          </span>
+        </div>
+
+        {
+          content.updatedAt && (
+            <span class="text-sm text-blue-700">
+              Last updated: {new Date(content.updatedAt).toLocaleString()}
+            </span>
+          )
+        }
+      </div>
+    </div>
+
+    <!-- Content Editor (React component with full interactivity) -->
+    <ContentEditor client:only="react" contentId={id} mode="edit" />
+  </div>
+</DashboardLayout>

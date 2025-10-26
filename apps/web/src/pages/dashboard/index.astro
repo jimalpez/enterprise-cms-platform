@@ -1,0 +1,46 @@
+---
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+
+const token = Astro.cookies.get("auth_token")?.value;
+let user = null;
+let isAuthenticated = false;
+
+if (token) {
+  try {
+    // Verify token and get user info
+    const response = await fetch(
+      `${import.meta.env.PUBLIC_API_URL}/api/auth/verify`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    if (response.ok) {
+      user = await response.json();
+      isAuthenticated = true;
+    }
+  } catch (error) {
+    console.error("Auth verification error:", error);
+  }
+}
+
+// Get user info from cooki
+try {
+  const userStr = Astro.cookies.get("user")?.value;
+  if (userStr) {
+    user = JSON.parse(userStr);
+  }
+} catch (e) {
+  console.error("Failed to parse user cookie:", e);
+  return Astro.redirect("/login");
+}
+
+if (!user) {
+  return Astro.redirect("/login");
+}
+---
+
+<DashboardLayout title="Dashboard" currentView="dashboard">
+  <h1>Dashboard</h1>
+</DashboardLayout>

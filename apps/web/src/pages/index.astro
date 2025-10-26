@@ -1,0 +1,145 @@
+---
+// @pages/index.astro
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ArticleCard from '../components/astro/ArticleCard.astro';
+import SearchBar from '../components/islands/SearchBar';
+import { contentApi } from '../lib/api';
+
+// Check authentication
+const token = Astro.cookies.get('auth_token')?.value;
+let user = null;
+let isAuthenticated = false;
+
+if (token) {
+  try {
+    // Verify token and get user info
+    const response = await fetch(`${import.meta.env.PUBLIC_API_URL}/api/auth/verify`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (response.ok) {
+      user = await response.json();
+      isAuthenticated = true;
+    }
+  } catch (error) {
+    console.error('Auth verification error:', error);
+  }
+}
+
+// Fetch latest articles
+let articles = [];
+try {
+  // ✅ FIX: Get the paginated response
+  const paginatedResponse = await contentApi.getAll({ 
+    limit: 6, 
+    status: 'published'  // Change to 'draft' if your articles are drafts
+  });
+  
+  // ✅ FIX: Extract items from the response
+  articles = paginatedResponse.items || [];
+  
+  console.log('Articles fetched:', articles.length);
+} catch (error) {
+  console.error('Error fetching articles:', error);
+}
+---
+
+<BaseLayout title="Home">
+  <!-- Hero Section -->
+  <section class="bg-linear-to-r from-primary-600 to-primary-800 py-20 text-white">
+    <div class="container mx-auto px-4">
+      <div class="max-w-3xl mx-auto text-center">
+        <h1 class="text-5xl font-bold mb-6">
+          Enterprise Content Management Platform
+        </h1>
+        <p class="text-xl mb-8 text-primary-100">
+          Built with Next.js, Astro, and React for maximum performance and scalability
+        </p>
+        <div class="flex justify-center">
+          <SearchBar client:load />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="py-16 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <div class="grid md:grid-cols-3 gap-8 mb-16">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Lightning Fast</h3>
+          <p class="text-gray-600">
+            Server-side rendering with Islands architecture for optimal performance
+          </p>
+        </div>
+
+        <div class="text-center">
+          <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Secure</h3>
+          <p class="text-gray-600">
+            JWT authentication with role-based access control
+          </p>
+        </div>
+
+        <div class="text-center">
+          <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Flexible</h3>
+          <p class="text-gray-600">
+            Powerful API with content versioning and real-time updates
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Latest Articles -->
+  <section class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between mb-8">
+        <h2 class="text-3xl font-bold">Latest Articles</h2>
+        <a href="/blog" class="text-primary-600 hover:text-primary-700 font-medium">
+          View all →
+        </a>
+      </div>
+
+      {articles.length > 0 ? (
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {articles.map((article) => (
+            <ArticleCard article={article} />
+          ))}
+        </div>
+      ) : (
+        <div class="text-center py-12 text-gray-500">
+          <p>No articles found. Create your first article to get started!</p>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-16 bg-primary-600 text-white">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+      <p class="text-xl mb-8 text-primary-100">
+        Create your account and start publishing content today
+      </p>
+      <a href="/dashboard" class="btn bg-white text-primary-600 hover:bg-gray-100 inline-block px-6 py-3 rounded-lg font-semibold">
+        Go to Dashboard
+      </a>
+    </div>
+  </section>
+</BaseLayout>

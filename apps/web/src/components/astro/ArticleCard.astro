@@ -1,0 +1,76 @@
+---
+import type { Content } from '@cms/shared';
+import { formatDate } from '@cms/shared';
+
+interface Props {
+  article: Content;
+}
+
+const { article } = Astro.props;
+---
+
+<article class="card hover:shadow-lg transition-shadow">
+  {article.featuredImage && (
+    <img 
+      src={article.featuredImage} 
+      alt={article.title}
+      class="w-full h-48 object-cover rounded-t-lg -mt-6 -mx-6 mb-4"
+    />
+  )}
+  
+  <div class="flex items-center gap-2 text-sm text-gray-600 mb-2">
+    <time datetime={article.createdAt.toString()}>
+      {formatDate(article.createdAt)}
+    </time>
+    <span>•</span>
+    <span class="capitalize">{article.type}</span>
+  </div>
+  
+  <h2 class="text-2xl font-bold mb-2">
+    <a href={`/blog/${article.slug}`} class="hover:text-primary-600 transition-colors">
+      {article.title}
+    </a>
+  </h2>
+  
+  {article.excerpt && (
+    <p class="text-gray-600 mb-4">
+      {article.excerpt}
+    </p>
+  )}
+  
+  {article.tags && article.tags.length > 0 && (
+    <div class="flex flex-wrap gap-2">
+      {article.tags.map((tag) => (
+        <span class="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
+          {tag}
+        </span>
+      ))}
+    </div>
+  )}
+  
+  <div class="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+    {article.author && (
+      <div class="flex items-center gap-2">
+        {article.author.avatar ? (
+          <img 
+            src={article.author.avatar} 
+            alt={article.author.name}
+            class="w-8 h-8 rounded-full"
+          />
+        ) : (
+          <div class="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold">
+            {article.author.name[0].toUpperCase()}
+          </div>
+        )}
+        <span class="text-sm text-gray-700">{article.author.name}</span>
+      </div>
+    )}
+    
+    <a 
+      href={`/blog/${article.slug}`}
+      class="text-primary-600 hover:text-primary-700 font-medium text-sm"
+    >
+      Read more →
+    </a>
+  </div>
+</article>

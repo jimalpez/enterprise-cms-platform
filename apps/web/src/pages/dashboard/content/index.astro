@@ -1,0 +1,645 @@
+---
+// apps/web/src/pages/dashboard/content/index.astro
+export const prerender = false;
+
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import { contentApi } from '@/lib/api';
+
+// ============================================================
+// AUTHENTICATION CHECK
+// ============================================================
+const token = Astro.cookies.get('auth_token')?.value;
+let user = null;
+let isAuthenticated = false;
+
+if (token) {
+  try {
+    // Verify token and get user info
+    const response = await fetch(`${import.meta.env.PUBLIC_API_URL}/api/auth/verify`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (response.ok) {
+      user = await response.json();
+      isAuthenticated = true;
+    }
+  } catch (error) {
+    console.error('Auth verification error:', error);
+  }
+}
+
+// Get user info from cooki
+try {
+  const userStr = Astro.cookies.get('user')?.value;
+  if (userStr) {
+    user = JSON.parse(userStr);
+  }
+} catch (e) {
+  console.error('Failed to parse user cookie:', e);
+  return Astro.redirect('/login');
+}
+
+if (!user) {
+  return Astro.redirect('/login');
+}
+
+// ============================================================
+// QUERY PARAMETERS
+// ============================================================
+const url = new URL(Astro.request.url);
+const page = parseInt(url.searchParams.get('page') || '1');
+const limit = parseInt(url.searchParams.get('limit') || '10');
+const type = url.searchParams.get('type') || '';
+const status = url.searchParams.get('status') || '';
+const search = url.searchParams.get('search') || '';
+
+// ============================================================
+// FETCH CONTENT
+// ============================================================
+let contents: any[] = [];
+let pagination = {
+  page: 1,
+  limit: 10,
+  total: 0,
+  pages: 1,
+};
+let error: string | null = null;
+let stats = {
+  total: 0,
+  published: 0,
+  draft: 0,
+  archived: 0,
+};
+
+try {
+  const response = await contentApi.getAll({ 
+    page, 
+    limit, 
+    type: type || undefined, 
+    status: status || undefined,
+  });
+  
+  // API returns flat structure: { items, total, page, limit, totalPages }
+  contents = response.items || [];
+  pagination = {
+    page: response.page || page,
+    limit: response.limit || limit,
+    total: response.total || 0,
+    pages: response.totalPages || 1,
+  };
+  
+  // Calculate stats from total counts
+  // For better performance, consider adding a dedicated /api/content/stats endpoint
+  const publishedResponse = await contentApi.getAll({ page: 1, limit: 1, status: 'published' });
+  const draftResponse = await contentApi.getAll({ page: 1, limit: 1, status: 'draft' });
+  const archivedResponse = await contentApi.getAll({ page: 1, limit: 1, status: 'archived' });
+  
+  stats.total = pagination.total;
+  stats.published = publishedResponse.total || 0;
+  stats.draft = draftResponse.total || 0;
+  stats.archived = archivedResponse.total || 0;
+} catch (e: any) {
+  error = e.message || 'Failed to load content';
+  console.error('Error loading content:', e);
+}
+
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'published': return 'bg-green-100 text-green-800 border-green-200';
+    case 'draft': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'archived': return 'bg-gray-100 text-gray-800 border-gray-200';
+    default: return 'bg-blue-100 text-blue-800 border-blue-200';
+  }
+};
+
+const getTypeColor = (type: string) => {
+  switch (type) {
+    case 'article': return 'bg-purple-100 text-purple-800';
+    case 'page': return 'bg-blue-100 text-blue-800';
+    case 'media': return 'bg-orange-100 text-orange-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const formatDate = (date: string | Date) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+const canCreate = user.role === 'admin' || user.role === 'editor' || user.role === 'author';
+
+const title = 'Content Management';
+---
+
+<DashboardLayout title={title} currentView='content'>
+  <div class="min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      
+      <!-- ============================================================ -->
+      <!-- HEADER SECTION -->
+      <!-- ============================================================ -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">Content Management</h1>
+            <p class="mt-2 text-gray-600">
+              Manage your articles, pages, and media content
+            </p>
+          </div>
+          
+          {canCreate && (
+            <a
+              href="/dashboard/content/new"
+              class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm"
+            >
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Create New Content
+            </a>
+          )}
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- STATS CARDS -->
+      <!-- ============================================================ -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600">Total Content</p>
+              <p class="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
+            </div>
+            <div class="p-3 bg-blue-50 rounded-full">
+              <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600">Published</p>
+              <p class="text-2xl font-bold text-green-600 mt-1">{stats.published}</p>
+            </div>
+            <div class="p-3 bg-green-50 rounded-full">
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600">Drafts</p>
+              <p class="text-2xl font-bold text-yellow-600 mt-1">{stats.draft}</p>
+            </div>
+            <div class="p-3 bg-yellow-50 rounded-full">
+              <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600">Archived</p>
+              <p class="text-2xl font-bold text-gray-600 mt-1">{stats.archived}</p>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-full">
+              <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- FILTERS & SEARCH -->
+      <!-- ============================================================ -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <form method="get" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Search -->
+            <div class="md:col-span-2">
+              <label for="search" class="block text-sm font-medium text-gray-700 mb-1">
+                Search
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  id="search"
+                  name="search"
+                  value={search}
+                  placeholder="Search by title or content..."
+                  class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <!-- Type Filter -->
+            <div>
+              <label for="type" class="block text-sm font-medium text-gray-700 mb-1">
+                Type
+              </label>
+              <select
+                id="type"
+                name="type"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Types</option>
+                <option value="article" selected={type === 'article'}>Article</option>
+                <option value="page" selected={type === 'page'}>Page</option>
+                <option value="media" selected={type === 'media'}>Media</option>
+              </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div>
+              <label for="status" class="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
+              <select
+                id="status"
+                name="status"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Status</option>
+                <option value="draft" selected={status === 'draft'}>Draft</option>
+                <option value="published" selected={status === 'published'}>Published</option>
+                <option value="archived" selected={status === 'archived'}>Archived</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-2">
+            <button
+              type="submit"
+              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium"
+            >
+              Apply Filters
+            </button>
+            <a
+              href="/dashboard/content"
+              class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
+            >
+              Clear All
+            </a>
+          </div>
+        </form>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- ERROR MESSAGE -->
+      <!-- ============================================================ -->
+      {error && (
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
+          <svg class="w-5 h-5 text-red-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <h3 class="text-sm font-medium text-red-800">Error Loading Content</h3>
+            <p class="text-sm text-red-700 mt-1">{error}</p>
+          </div>
+        </div>
+      )}
+
+      <!-- ============================================================ -->
+      <!-- CONTENT LIST -->
+      <!-- ============================================================ -->
+      {contents.length === 0 ? (
+        <!-- Empty State -->
+        <div class="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200">
+          <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <h3 class="mt-4 text-lg font-medium text-gray-900">
+            {search || type || status ? 'No content found' : 'No content yet'}
+          </h3>
+          <p class="mt-2 text-sm text-gray-500">
+            {search || type || status 
+              ? 'Try adjusting your filters or search query.' 
+              : 'Get started by creating your first content item.'}
+          </p>
+          {canCreate && !search && !type && !status && (
+            <div class="mt-6">
+              <a
+                href="/dashboard/content/new"
+                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Create Your First Content
+              </a>
+            </div>
+          )}
+        </div>
+      ) : (
+        <!-- Content Table -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <!-- Desktop View -->
+          <div class="hidden md:block overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Title
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Author
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Updated
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                {contents.map((content) => (
+                  <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4">
+                      <div class="flex items-center">
+                        {content.featuredImage && (
+                          <img
+                            src={content.featuredImage}
+                            alt=""
+                            class="h-10 w-10 rounded object-cover mr-3"
+                          />
+                        )}
+                        <div>
+                          <div class="text-sm font-medium text-gray-900">
+                            {content.title}
+                          </div>
+                          <div class="text-sm text-gray-500">
+                            /{content.slug}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(content.type)}`}>
+                        {content.type}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(content.status)}`}>
+                        {content.status}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex items-center">
+                        {content.author?.avatar && (
+                          <img
+                            src={content.author.avatar}
+                            alt=""
+                            class="h-6 w-6 rounded-full mr-2"
+                          />
+                        )}
+                        <span class="text-sm text-gray-900">{content.author?.name || 'Unknown'}</span>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(content.updatedAt)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div class="flex justify-end gap-3">
+                        <a
+                          href={`/dashboard/content/${content.id}/edit`}
+                          class="text-blue-600 hover:text-blue-900 transition"
+                        >
+                          Edit
+                        </a>
+                        {content.status === 'published' && (
+                          <a
+                            href={`/blog/${content.slug}`}
+                            target="_blank"
+                            class="text-green-600 hover:text-green-900 transition"
+                          >
+                            View
+                          </a>
+                        )}
+                        <button
+                          onclick={`if(confirm('Delete this content?')) window.location.href='/api/content/${content.id}/delete'`}
+                          class="text-red-600 hover:text-red-900 transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Mobile View -->
+          <div class="md:hidden divide-y divide-gray-200">
+            {contents.map((content) => (
+              <div class="p-4 hover:bg-gray-50 transition">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="flex-1">
+                    <h3 class="text-sm font-medium text-gray-900 mb-1">
+                      {content.title}
+                    </h3>
+                    <p class="text-xs text-gray-500">/{content.slug}</p>
+                  </div>
+                  {content.featuredImage && (
+                    <img
+                      src={content.featuredImage}
+                      alt=""
+                      class="h-12 w-12 rounded object-cover ml-3"
+                    />
+                  )}
+                </div>
+                
+                <div class="flex items-center gap-2 mb-3">
+                  <span class={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(content.type)}`}>
+                    {content.type}
+                  </span>
+                  <span class={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(content.status)}`}>
+                    {content.status}
+                  </span>
+                </div>
+
+                <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                  <span>{content.author?.name || 'Unknown'}</span>
+                  <span>{formatDate(content.updatedAt)}</span>
+                </div>
+
+                <div class="flex gap-2">
+                  <a
+                    href={`/dashboard/content/${content.id}/edit`}
+                    class="flex-1 text-center px-3 py-2 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition"
+                  >
+                    Edit
+                  </a>
+                  {content.status === 'published' && (
+                    <a
+                      href={`/blog/${content.slug}`}
+                      target="_blank"
+                      class="flex-1 text-center px-3 py-2 text-xs font-medium text-green-600 bg-green-50 rounded hover:bg-green-100 transition"
+                    >
+                      View
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <!-- ============================================================ -->
+      <!-- PAGINATION -->
+      <!-- ============================================================ -->
+      {pagination.pages > 1 && (
+        <div class="mt-6 flex items-center justify-between bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-4">
+          <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-700">
+              Page <span class="font-medium">{pagination.page}</span> of <span class="font-medium">{pagination.pages}</span>
+            </span>
+            <span class="text-sm text-gray-500">
+              ({pagination.total} total items)
+            </span>
+          </div>
+          
+          <div class="flex gap-2">
+            {pagination.page > 1 && (
+              <a
+                href={`?page=${pagination.page - 1}${type ? `&type=${type}` : ''}${status ? `&status=${status}` : ''}${search ? `&search=${search}` : ''}`}
+                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition"
+              >
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Previous
+              </a>
+            )}
+            
+            {pagination.page < pagination.pages && (
+              <a
+                href={`?page=${pagination.page + 1}${type ? `&type=${type}` : ''}${status ? `&status=${status}` : ''}${search ? `&search=${search}` : ''}`}
+                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition"
+              >
+                Next
+                <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+    </div>
+  </div>
+  
+  <script>
+  // Handle delete button clicks
+  document.addEventListener('DOMContentLoaded', () => {
+    const deleteButtons = document.querySelectorAll('[data-delete-content]');
+    
+    deleteButtons.forEach(button => {
+      button.addEventListener('click', async (e) => {
+        const contentId = button.getAttribute('data-delete-content');
+        
+        if (!confirm('Are you sure you want to delete this content? This action cannot be undone.')) {
+          return;
+        }
+        
+        try {
+          // Disable button during deletion
+          button.setAttribute('disabled', 'disabled');
+          button.textContent = 'Deleting...';
+          
+          // Get auth token
+          const token = localStorage.getItem('accessToken');
+          
+          if (!token) {
+            alert('Authentication required. Please log in again.');
+            window.location.href = '/login';
+            return;
+          }
+          
+          // Call DELETE API
+          const response = await fetch(`${import.meta.env.PUBLIC_API_URL || 'http://localhost:3000'}/api/content/${contentId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok && result.success) {
+            // Success - reload page to show updated list
+            window.location.reload();
+          } else {
+            // Error
+            alert(result.error || 'Failed to delete content');
+            button.removeAttribute('disabled');
+            button.textContent = 'Delete';
+          }
+        } catch (error) {
+          console.error('Delete error:', error);
+          alert('An error occurred while deleting content');
+          button.removeAttribute('disabled');
+          button.textContent = 'Delete';
+        }
+      });
+    });
+  });
+</script>
+</DashboardLayout>
+
+<style>
+  /* Custom scrollbar for table */
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+</style>

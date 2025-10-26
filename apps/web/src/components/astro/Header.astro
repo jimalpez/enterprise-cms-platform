@@ -1,0 +1,52 @@
+---
+// src/components/Header.astro
+import UserMenu from '../react/UserMenu';
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="bg-white shadow-sm sticky top-0 z-50">
+  <nav class="container mx-auto px-4 py-4">
+    <div class="flex items-center justify-between">
+      <a href="/" class="text-2xl font-bold text-primary-600">
+        CMS Platform
+      </a>
+      
+      <ul class="flex items-center space-x-6">
+        <li>
+          <a 
+            href="/"
+            class:list={[
+              "hover:text-primary-600 transition-colors",
+              currentPath === "/" ? "text-primary-600 font-semibold" : "text-gray-700"
+            ]}
+          >
+            Home
+          </a>
+        </li>
+        <li>
+          <a 
+            href="/blog"
+            class:list={[
+              "hover:text-primary-600 transition-colors",
+              currentPath.startsWith("/blog") ? "text-primary-600 font-semibold" : "text-gray-700"
+            ]}
+          >
+            Blog
+          </a>
+        </li>
+        
+        <!-- User Menu Component (React) -->
+        <li id="auth-section">
+          <UserMenu client:load currentPath={currentPath} />
+        </li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<style>
+  header {
+    border-bottom: 1px solid #e5e7eb;
+  }
+</style>

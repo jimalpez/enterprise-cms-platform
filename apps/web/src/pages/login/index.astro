@@ -1,0 +1,99 @@
+---
+// apps/web/src/pages/login/index.astro
+import LoginForm from "@/components/react/LoginForm";
+import "@/styles/global.css";
+
+// Check if user is already logged in
+const token = Astro.cookies.get("accessToken")?.value;
+
+if (token) {
+  // User is already logged in, redirect to dashboard
+  return Astro.redirect("/dashboard");
+}
+
+// Get redirect URL from query params
+const redirect = Astro.url.searchParams.get("redirect") || "/dashboard";
+
+const title = "Login - Enterprise CMS";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Sign in to your account" />
+    <title>{title}</title>
+
+    <!-- Tailwind CSS (adjust path to your setup) -->
+    <link rel="stylesheet" href="/styles/global.css" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+
+  <body class="bg-linear-to-br from-blue-50 via-white to-purple-50">
+    <div
+      class="min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <!-- Logo/Brand -->
+      <div class="sm:mx-auto sm:w-full sm:max-w-md mb-8">
+        <div class="flex justify-center">
+          <a href="/" class="flex items-center space-x-2">
+            <!-- Replace with your logo -->
+            <svg
+              class="h-12 w-12 text-blue-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              ></path>
+            </svg>
+            <span class="text-2xl font-bold text-gray-900">Enterprise CMS</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Login Form -->
+      <LoginForm client:only="react" redirectTo={redirect} />
+
+      <!-- Footer Links -->
+      <div class="mt-8 text-center">
+        <div
+          class="flex items-center justify-center space-x-4 text-sm text-gray-600">
+          <a href="/privacy" class="hover:text-gray-900 transition">
+            Privacy Policy
+          </a>
+          <span class="text-gray-300">•</span>
+          <a href="/terms" class="hover:text-gray-900 transition">
+            Terms of Service
+          </a>
+          <span class="text-gray-300">•</span>
+          <a href="/help" class="hover:text-gray-900 transition"> Help </a>
+        </div>
+        <p class="mt-4 text-xs text-gray-500">
+          © {new Date().getFullYear()} Enterprise CMS. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
+
+<style>
+  /* Additional custom styles */
+  body {
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+      Arial, sans-serif;
+  }
+
+  /* Smooth animations */
+  * {
+    transition:
+      color 0.15s ease-in-out,
+      background-color 0.15s ease-in-out;
+  }
+</style>
